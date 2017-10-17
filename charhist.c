@@ -12,6 +12,8 @@ int digit_count(int);
 
 char digit_at_position(int, int);
 
+int find_largest(int *);
+
 int main(int argc, char **argv){
 	FILE *fp;
 	fp = stdin;
@@ -23,7 +25,7 @@ int main(int argc, char **argv){
 	}
 	collect_history(fp, histogram);
 	/*Check for '-c' column oriented mode*/
-	if(argc == 1){//not specified or row oriented
+	if(argc == 1 || strcmp(argv[1], "-r") == 0){//not specified or row oriented
 		row_orient(histogram);
 	}else if(strcmp(argv[1], "-c") == 0){//column oriented histogram
 		col_orient(histogram);
@@ -45,7 +47,18 @@ void row_orient(int *hist){
 
 void col_orient(int *hist){
 	/*bottom line of column / legend*/
+	int col_val = find_largest(hist);
+	col_val = digit_count(col_val) - 1;
 	int count;
+	for(count = col_val; count >= 0; --count){
+		int i;
+		for(i = 0; i < 27; ++i){
+			printf("%c ", digit_at_position(hist[i], count));
+			if(i == 26){
+				printf("\n");
+			}
+		}
+	}
 	for(count = 0; count < 26; ++count){
 		printf("%c ", (char) (count + 65));
 	}
@@ -68,8 +81,10 @@ void collect_history(FILE *fp, int *hist){
 			if(!isalpha(val)){
 				pos = 26;
 			}
-			/*increment histogram value for associated character*/
-			hist[pos] += 1;
+			if(!isspace(val)){
+				/*increment histogram value for associated character skipping whitespace values*/
+				hist[pos] += 1;
+			}
 		}
 	}while(!feof(fp));
 	return;
@@ -91,11 +106,27 @@ char digit_at_position(int val, int i){
 	if(i == 0){
 		converted = (val % 10) + '0';
 	}else {
-		int num;
-		for(num = 0; num < i; ++num){
-			val /= 10;
+		/*whitespace character used if i is out of range for val*/
+		if(i > (digit_count(val) - 1)){
+			converted = ' ';
+		}else {
+			int num;
+			for(num = 0; num < i; ++num){
+				val /= 10;
+			}
+			converted = (val % 10) + '0';
 		}
-		converted = (val % 10) + '0';
 	}
 	return converted;
+}
+
+int find_largest(int *hist){
+	int high = hist[0];
+	int i;
+	for(i = 1; i < 27; ++i){
+		if(hist[i] > high){
+			high = hist[i];
+		}
+	}
+	return high;
 }
